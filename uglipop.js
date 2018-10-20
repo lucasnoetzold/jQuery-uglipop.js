@@ -4,95 +4,97 @@
 |--Contributers : Add Your Name Below--|
 |-- zhuharev (kirill at zhuharev.ru)(https://github.com/zhuharev)--|
 |--Nicolas Dietrich (https://github.com/nidico)--|*/
+|--Lucas Noetzold (https://github.com/lucasnoetzold)--|*/
 
-(function(w, doc) {
-    "use strict";
+$(function(){
+    let
+            remove = () => {
+                overlay_wrapper.css("display", "none");
+                overlay.css("display", "none");
+                content_fixed.css("display", "none");
+            },
+            popbox = $("<div>")
+                .css("z-index", "1000"),
+            overlay = $("<div>")
+                .css({
+                    position: "fixed",
+                    top: "0",
+                    bottom: "0",
+                    left: "0",
+                    right: "0",
+                    opacity: 0.3,
+                    width: "100%",
+                    height: "100%",
+                    "background-color": "black",
+                    display: "none",
+                    "z-index": "999"
+                }),
+            content_fixed = $("<div>")
+                .css({
+                    position: "fixed",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    opacity: "1",
+                    display: "none",
+                    "z-index": "1000"
+                })
+                .append(popbox)
+                .appendTo(document.body),
+            overlay_wrapper = $("<div>")
+                .css({
+                    position: "absolute",
+                    top: "0",
+                    bottom: "0",
+                    left: "0",
+                    right: "0",
+                    display: "none",
+                    "z-index": "999"
+                })
+                .click(remove)
+                .append(overlay)
+                .appendTo(document.body);
 
-    var initted = false
-
-    function on(el, eventName, handler) {
-        if (el.addEventListener) {
-            el.addEventListener(eventName, handler);
-        } else {
-            el.attachEvent('on' + eventName, function() {
-                handler.call(el);
-            });
-        }
-    }
-
-    function init() {
-        if initted
-            return
-
-        initted = true
-        
-        var overlay = doc.createElement('div');
-        var content_fixed = doc.createElement('div');
-        var popbox = doc.createElement('div');
-        var overlay_wrapper = doc.createElement('div');
-        content_fixed.id = 'uglipop_content_fixed';
-        content_fixed.setAttribute('style', 'position:fixed;top: 50%;left: 50%;transform: translate(-50%, -50%);-webkit-transform: translate(-50%, -50%);-ms-transform: translate(-50%, -50%);opacity:1;');
-        popbox.id = 'uglipop_popbox';
-        overlay_wrapper.id = "uglipop_overlay_wrapper";
-        overlay_wrapper.setAttribute('style', 'position:absolute;top:0;bottom:0;left:0;right:0;');
-        overlay.id = "uglipop_overlay";
-        overlay.setAttribute('style', 'position:fixed;top:0;bottom:0;left:0;right:0;opacity:0.3;width:100%;height:100%;background-color:black;');
-        overlay_wrapper.appendChild(overlay);
-        content_fixed.appendChild(popbox);
-        doc.body.appendChild(overlay_wrapper);
-        doc.body.appendChild(content_fixed);
-        doc.getElementById('uglipop_overlay_wrapper').style.display = 'none';
-        doc.getElementById('uglipop_overlay').style.display = 'none';
-        doc.getElementById('uglipop_content_fixed').style.display = 'none';
-        overlay_wrapper.addEventListener('click', remove);
-        on(w, 'keydown', function(e) {
-            //kill pop if button is ESC ;)
-            if (e.keyCode == 27) {
-                remove();
-            }
-        });
-
-
-        //create global variables
-        w.uglipop = uglipop
-        w.removeuglipop = remove
-    }
-
-    function uglipop(config) {
+    $.fn.uglipop = function (config) {
+        let content;
 
         if (config) {
-            if (typeof config.class == 'string' && config.class) {
-                doc.getElementById('uglipop_popbox').setAttribute('class', config.class);
-            }
-            if (config.keepLayout && (!config.class)) {
-                doc.getElementById('uglipop_popbox').setAttribute('style', 'position:relative;height:300px;width:300px;background-color:white;opacity:1;');
-            }
+            if (config.class && (typeof config.class === 'string' || config.class instanceof String))
+                popbox.addClass(config.class);
 
-            if (typeof config.content == 'string' && config.content && config.source == 'html') {
-                doc.getElementById('uglipop_popbox').innerHTML = config.content;
-            }
-
-            if (typeof config.content == 'string' && config.content && config.source == 'div') {
-
-                doc.getElementById('uglipop_popbox').innerHTML = doc.getElementById(config.content).innerHTML;
-
-            }
+            if (config.keepLayout && !config.class)
+                popbox.css({
+                    position: "relative",
+                    height: "300px",
+                    width: "300px",
+                    "background-color": "white",
+                    "opacity": "1"
+                });
         }
 
-        doc.getElementById('uglipop_overlay_wrapper').style.display = '';
-        doc.getElementById('uglipop_overlay').style.display = '';
-        doc.getElementById('uglipop_content_fixed').style.display = '';
+        if (this instanceof jQuery)
+            content = this;
+        else if (config) {
+            if ((typeof config.content === 'string' || config.content instanceof String) && config.source === 'div')
+                content = $("#" + config.content);
+            else
+                content = config.content;
+        }
 
+        popbox.contents().detach();
+        popbox.append(content);
+        
+        overlay_wrapper.css("display", "");
+        overlay.css("display", "");
+        content_fixed.css("display", "");
 
-    }
+    };
 
-    function remove() {
-        doc.getElementById('uglipop_overlay_wrapper').style.display = 'none';
-        doc.getElementById('uglipop_overlay').style.display = 'none';
-        doc.getElementById('uglipop_content_fixed').style.display = 'none';
-    }
+    window.uglipop = $.fn.uglipop;
+    $(window).keypress(e => {
+        //kill pop if button is ESC ;)
+        if (e.which === 27);
+            remove();
+    });
 
-    //init on window loaded
-    on(doc, "DOMContentLoaded", init)
-    on(doc, "load", init)
-})(window, document)
+});
